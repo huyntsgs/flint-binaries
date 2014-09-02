@@ -30,3 +30,6 @@ OBJS = $(SRCS:.cpp=.o)
 
 $(TARGET) : $(FLINT_LIB) $(OBJS) $(HEADERS)
 	$(CC) $(OBJS) $(CPPFLAGS) $(LIBS) -o $@
+
+clean:
+	rm -rf $(TARGET)
