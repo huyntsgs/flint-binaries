@@ -24,9 +24,9 @@ CPPFLAGS += -O3
 endif
 
 # Objects and executable
-SRCS += test.cpp
+SRCS += $(TARGET).cpp
 HEADERS +=
 OBJS = $(SRCS:.cpp=.o)
 
-test : $(FLINT_LIB) $(OBJS) $(HEADERS)
+$(TARGET) : $(FLINT_LIB) $(OBJS) $(HEADERS)
 	$(CC) $(OBJS) $(CPPFLAGS) $(LIBS) -o $@
