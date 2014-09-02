@@ -38,7 +38,7 @@ MPFR_VERSION =   mpfr-3.1.2
 MPFR_SRC     =   $(LIB_SRC)/mpfr
 
 MPFR_BUILD    =   $(LIB_BUILD)/mpfr
-# IDIRS        += -I$(MPFR_BUILD)/include
+IDIRS        += -I$(MPFR_BUILD)/include
 MPFR_LIB      =   $(MPFR_BUILD)/lib/libmpfr.a
 STATIC_LIBS  +=   $(MPFR_LIB)
 
