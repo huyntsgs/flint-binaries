@@ -27,15 +27,18 @@
 #ifndef FMPQ_H
 #define FMPQ_H
 
-#undef ulong /* interferes with system includes */
+#undef ulong
+#define ulong ulongxx /* interferes with system includes */
 #include <stdio.h>
-#define ulong unsigned long
+#undef ulong
 
-#include <mpir.h>
+#include <gmp.h>
 #include <mpfr.h>
+#define ulong mp_limb_t
 #include "flint.h"
 #include "fmpz.h"
 #include "fmpz_vec.h"
+
 
 #ifdef __cplusplus
  extern "C" {
@@ -56,8 +59,8 @@ typedef fmpq fmpq_t[1];
 
 static __inline__ void fmpq_init(fmpq_t x)
 {
-    x->num = 0L;
-    x->den = 1L;
+    x->num = WORD(0);
+    x->den = WORD(1);
 }
 
 static __inline__ void fmpq_clear(fmpq_t x)
@@ -66,10 +69,10 @@ static __inline__ void fmpq_clear(fmpq_t x)
     fmpz_clear(fmpq_denref(x));
 }
 
-static __inline__ fmpq * _fmpq_vec_init(long n)
+static __inline__ fmpq * _fmpq_vec_init(slong n)
 {
     fmpq * v = (fmpq *) flint_malloc(sizeof(fmpq) * n);
-    long i;
+    slong i;
 
     for (i = 0; i < n; i++)
         fmpq_init(v + i);
@@ -77,7 +80,7 @@ static __inline__ fmpq * _fmpq_vec_init(long n)
     return v;
 }
 
-static __inline__ void _fmpq_vec_clear(fmpq * vec, long n)
+static __inline__ void _fmpq_vec_clear(fmpq * vec, slong n)
 {
     _fmpz_vec_clear((fmpz *) vec, 2 * n);
 }
@@ -136,6 +139,7 @@ static __inline__ void fmpq_neg(fmpq_t dest, const fmpq_t src)
 static __inline__ void fmpq_abs(fmpq_t dest, const fmpq_t src)
 {
     fmpz_abs(fmpq_numref(dest), fmpq_numref(src));
+    fmpz_set(fmpq_denref(dest), fmpq_denref(src));
 }
 
 int _fmpq_cmp(const fmpz_t p, const fmpz_t q, const fmpz_t r, const fmpz_t s);
@@ -151,9 +155,9 @@ int _fmpq_is_canonical(const fmpz_t num, const fmpz_t den);
 int fmpq_is_canonical(const fmpq_t x);
 
 
-void _fmpq_set_si(fmpz_t rnum, fmpz_t rden, long p, ulong q);
+void _fmpq_set_si(fmpz_t rnum, fmpz_t rden, slong p, ulong q);
 
-void fmpq_set_si(fmpq_t res, long p, ulong q);
+void fmpq_set_si(fmpq_t res, slong p, ulong q);
 
 
 void fmpq_set_fmpz_frac(fmpq_t res, const fmpz_t p, const fmpz_t q);
@@ -232,9 +236,9 @@ void fmpq_mul(fmpq_t res, const fmpq_t op1, const fmpq_t op2);
 void fmpq_mul_fmpz(fmpq_t res, const fmpq_t op, const fmpz_t x);
 
 void _fmpq_pow_si(fmpz_t rnum, fmpz_t rden, 
-                  const fmpz_t opnum, const fmpz_t opden, long e);
+                  const fmpz_t opnum, const fmpz_t opden, slong e);
 
-void fmpq_pow_si(fmpq_t rop, const fmpq_t op, long e);
+void fmpq_pow_si(fmpq_t rop, const fmpq_t op, slong e);
 
 
 void _fmpq_addmul(fmpz_t rnum, fmpz_t rden, const fmpz_t op1num,
@@ -269,78 +273,41 @@ int _fmpq_reconstruct_fmpz(fmpz_t num, fmpz_t den, const fmpz_t a, const fmpz_t 
 
 int fmpq_reconstruct_fmpz(fmpq_t res, const fmpz_t a, const fmpz_t m);
 
-int
-_fmpq_reconstruct_fmpz_2(fmpz_t n, fmpz_t d,
+int _fmpq_reconstruct_fmpz_2(fmpz_t n, fmpz_t d,
     const fmpz_t a, const fmpz_t m, const fmpz_t N, const fmpz_t D);
 
-int
-fmpq_reconstruct_fmpz_2(fmpq_t res, const fmpz_t a, const fmpz_t m,
+int fmpq_reconstruct_fmpz_2(fmpq_t res, const fmpz_t a, const fmpz_t m,
                                         const fmpz_t N, const fmpz_t D);
 
 mp_bitcnt_t fmpq_height_bits(const fmpq_t x);
 
 void fmpq_height(fmpz_t height, const fmpq_t x);
 
-void
-_fmpq_next_calkin_wilf(fmpz_t rnum, fmpz_t rden,
+void _fmpq_next_calkin_wilf(fmpz_t rnum, fmpz_t rden,
     const fmpz_t num, const fmpz_t den);
 
 void fmpq_next_calkin_wilf(fmpq_t res, const fmpq_t x);
 
-void
-_fmpq_next_signed_calkin_wilf(fmpz_t rnum, fmpz_t rden,
+void _fmpq_next_signed_calkin_wilf(fmpz_t rnum, fmpz_t rden,
     const fmpz_t num, const fmpz_t den);
 
-void
-fmpq_next_signed_calkin_wilf(fmpq_t res, const fmpq_t x);
+void fmpq_next_signed_calkin_wilf(fmpq_t res, const fmpq_t x);
 
-void
-_fmpq_next_minimal(fmpz_t rnum, fmpz_t rden,
+void _fmpq_next_minimal(fmpz_t rnum, fmpz_t rden,
     const fmpz_t num, const fmpz_t den);
 
 void fmpq_next_minimal(fmpq_t res, const fmpq_t x);
 
-void
-_fmpq_next_signed_minimal(fmpz_t rnum, fmpz_t rden,
+void _fmpq_next_signed_minimal(fmpz_t rnum, fmpz_t rden,
     const fmpz_t num, const fmpz_t den);
 
-void
-fmpq_next_signed_minimal(fmpq_t res, const fmpq_t x);
+void fmpq_next_signed_minimal(fmpq_t res, const fmpq_t x);
 
-long fmpq_get_cfrac(fmpz * c, fmpq_t rem, const fmpq_t x, long n);
+slong fmpq_get_cfrac(fmpz * c, fmpq_t rem, const fmpq_t x, slong n);
 
-void fmpq_set_cfrac(fmpq_t x, const fmpz * c, long n);
+void fmpq_set_cfrac(fmpq_t x, const fmpz * c, slong n);
 
-long fmpq_cfrac_bound(const fmpq_t x);
-
-typedef struct
-{
-    fmpz_t P;
-    fmpz_t Q;
-    fmpz_t B;
-    fmpz_t T;
-    fmpz_t C;
-    fmpz_t D;
-    fmpz_t V;
-} fmpq_bsplit_struct;
-
-typedef fmpq_bsplit_struct fmpq_bsplit_t[1];
-
-void fmpq_bsplit_init(fmpq_bsplit_t s);
-
-void fmpq_bsplit_clear(fmpq_bsplit_t s);
-
-void fmpq_bsplit_get_fmpq(fmpq_t x, const fmpq_bsplit_t s);
-
-void fmpq_bsplit_get_mpfr(mpfr_t x, const fmpq_bsplit_t s);
-
-void fmpq_bsplit_sum_pq(fmpq_bsplit_t s, const fmpq * pq, long n1, long n2);
-
-void fmpq_bsplit_sum_abpq(fmpq_bsplit_t s,
-        const fmpq * ab, const fmpq * pq, long n1, long n2);
-
-void fmpq_bsplit_sum_abcdpq(fmpq_bsplit_t s,
-        const fmpq * ab, const fmpq * cd, const fmpq * pq, long n1, long n2);
+slong fmpq_cfrac_bound(const fmpq_t x);
 
 #ifdef __cplusplus
 }

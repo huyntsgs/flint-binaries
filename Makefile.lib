@@ -10,7 +10,7 @@ LIB_SRC = lib-src
 
 ########
 
-FLINT_VERSION =   flint-2.3
+FLINT_VERSION =   flint-2.4.4
 FLINT_SRC     =   $(LIB_SRC)/flint
 
 FLINT_BUILD   =   $(LIB_BUILD)/flint
@@ -29,6 +29,9 @@ MPFR_LIB      =   $(MPFR_BUILD)/lib/libmpfr.a
 STATIC_LIBS  +=   $(MPFR_LIB)
 
 ########
+
+# mpir-2.6.0 fails to build on OSX with clang (default compiler)
+# https://groups.google.com/forum/#!topic/mpir-devel/ydcKGV-EYlg
 
 MPIR_VERSION =   mpir-2.3.1
 MPIR_SRC     =   $(LIB_SRC)/mpir

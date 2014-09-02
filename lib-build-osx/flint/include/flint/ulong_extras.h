@@ -29,7 +29,7 @@
 #ifndef ULONG_EXTRAS_H
 #define ULONG_EXTRAS_H
 
-#include <mpir.h>
+#include <gmp.h>
 #include "flint.h"
 
 #ifdef __cplusplus
@@ -55,28 +55,83 @@ typedef struct {
 #define FLINT_PSEUDOSQUARES_CUTOFF 1000
 
 #define FLINT_FACTOR_TRIAL_PRIMES 3000
+/* nth_prime(FLINT_FACTOR_TRIAL_PRIMES) */
+#define FLINT_FACTOR_TRIAL_PRIMES_PRIME UWORD(27449)
+#define FLINT_FACTOR_TRIAL_CUTOFF (UWORD(27449) * UWORD(27449))
+
+#define FLINT_PRIMES_TAB_DEFAULT_CUTOFF 1000000
+
 #define FLINT_FACTOR_SQUFOF_ITERS 50000
-#define FLINT_FACTOR_ONE_LINE_MAX (1UL<<39)
+#define FLINT_FACTOR_ONE_LINE_MAX (UWORD(1)<<39)
 #define FLINT_FACTOR_ONE_LINE_ITERS 40000
 
 #define FLINT_PRIME_PI_ODD_LOOKUP_CUTOFF 311
 
+#define FLINT_SIEVE_SIZE 65536
+
 #if FLINT64
-#define ULONG_MAX_PRIME 18446744073709551557UL
+#define UWORD_MAX_PRIME UWORD(18446744073709551557)
 #else
-#define ULONG_MAX_PRIME 4294967291UL
+#define UWORD_MAX_PRIME UWORD(4294967291)
 #endif
 
+typedef struct
+{
+    slong small_i;
+    slong small_num;
+    unsigned int * small_primes;
+
+    mp_limb_t sieve_a;
+    mp_limb_t sieve_b;
+    slong sieve_i;
+    slong sieve_num;
+    char * sieve;
+}
+n_primes_struct;
+
+typedef n_primes_struct n_primes_t[1];
+
+void n_primes_init(n_primes_t iter);
+
+void n_primes_clear(n_primes_t iter);
+
+void n_primes_extend_small(n_primes_t iter, mp_limb_t bound);
+
+void n_primes_sieve_range(n_primes_t iter, mp_limb_t a, mp_limb_t b);
+
+void n_primes_jump_after(n_primes_t iter, mp_limb_t n);
+
+static __inline__ mp_limb_t
+n_primes_next(n_primes_t iter)
+{
+    if (iter->small_i < iter->small_num)
+        return iter->small_primes[(iter->small_i)++];
+
+    for (;;)
+    {
+        while (iter->sieve_i < iter->sieve_num)
+            if (iter->sieve[iter->sieve_i++] != 0)
+                return iter->sieve_a + 2 * (iter->sieve_i - 1);
+
+        if (iter->sieve_b == 0)
+            n_primes_jump_after(iter, iter->small_primes[iter->small_num-1]);
+        else
+            n_primes_jump_after(iter, iter->sieve_b);
+    }
+}
 
 extern const unsigned int flint_primes_small[];
 
-extern mp_limb_t * flint_primes;
+extern FLINT_TLS_PREFIX mp_limb_t * _flint_primes[FLINT_BITS];
+extern FLINT_TLS_PREFIX double * _flint_prime_inverses[FLINT_BITS];
+extern FLINT_TLS_PREFIX int _flint_primes_used;
 
-extern double * flint_prime_inverses;
+void n_compute_primes(ulong num_primes);
 
-extern mp_limb_t flint_num_primes;
+void n_cleanup_primes(void);
 
-extern mp_limb_t flint_primes_cutoff;
+const mp_limb_t * n_primes_arr_readonly(ulong n);
+const double * n_prime_inverses_arr_readonly(ulong n);
 
 mp_limb_t n_randlimb(flint_rand_t state);
 
@@ -90,7 +145,7 @@ mp_limb_t n_randtest(flint_rand_t state);
 
 mp_limb_t n_randtest_not_zero(flint_rand_t state);
 
-mp_limb_t n_randprime(flint_rand_t state, unsigned long bits, int proved);
+mp_limb_t n_randprime(flint_rand_t state, ulong bits, int proved);
 
 mp_limb_t n_randtest_prime(flint_rand_t state, int proved);
 
@@ -137,6 +192,9 @@ mp_limb_t n_mulmod_precomp(mp_limb_t a, mp_limb_t b,
 
 mp_limb_t n_mulmod2_preinv(mp_limb_t a, mp_limb_t b, 
                                         mp_limb_t n, mp_limb_t ninv);
+
+mp_limb_t n_mulmod_preinv(mp_limb_t a, mp_limb_t b, 
+                            mp_limb_t n, mp_limb_t ninv, ulong norm);
 
 mp_limb_t
 n_powmod_ui_precomp(mp_limb_t a, mp_limb_t exp, mp_limb_t n, double npre);
@@ -186,14 +244,23 @@ mp_limb_t n_negmod(mp_limb_t x, mp_limb_t n)
 
 mp_limb_t n_sqrtmod(mp_limb_t a, mp_limb_t p);
 
-long n_sqrtmod_2pow(mp_limb_t ** sqrt, mp_limb_t a, long exp); 
+slong n_sqrtmod_2pow(mp_limb_t ** sqrt, mp_limb_t a, slong exp); 
 
-long n_sqrtmod_primepow(mp_limb_t ** sqrt, mp_limb_t a, 
-                                              mp_limb_t p, long exp);
+slong n_sqrtmod_primepow(mp_limb_t ** sqrt, mp_limb_t a, 
+                                              mp_limb_t p, slong exp);
 
-long n_sqrtmodn(mp_limb_t ** sqrt, mp_limb_t a, n_factor_t * fac);
+slong n_sqrtmodn(mp_limb_t ** sqrt, mp_limb_t a, n_factor_t * fac);
 
 mp_limb_t n_gcd(mp_limb_t x, mp_limb_t y);
+
+static __inline__ mp_limb_t
+n_gcd_full(mp_limb_t x, mp_limb_t y)
+{
+    if (x >= y)
+        return n_gcd(x, y);
+    else
+        return n_gcd(y, x);
+}
 
 mp_limb_t n_xgcd(mp_limb_t * a, mp_limb_t * b, mp_limb_t x, mp_limb_t y);
 
@@ -241,8 +308,6 @@ int n_is_prime_pocklington(mp_limb_t n, ulong iterations);
 
 int n_is_prime(mp_limb_t n);
 
-void n_compute_primes(ulong num_primes);
-
 mp_limb_t n_nth_prime(ulong n);
 
 void n_nth_prime_bounds(mp_limb_t *lo, mp_limb_t *hi, ulong n);
@@ -258,7 +323,7 @@ int n_remove2_precomp(mp_limb_t * n, mp_limb_t p, double ppre);
 static __inline__
 void n_factor_init(n_factor_t * factors)
 {
-    factors->num = 0UL;
+    factors->num = UWORD(0);
 }
 
 void n_factor_insert(n_factor_t * factors, mp_limb_t p, ulong exp);
@@ -270,7 +335,7 @@ mp_limb_t n_factor_trial_partial(n_factor_t * factors, mp_limb_t n,
                 mp_limb_t * prod, ulong num_primes, mp_limb_t limit);
 
 mp_limb_t n_factor_trial(n_factor_t * factors, 
-                                  mp_limb_t n, mp_limb_t num_primes);
+                                  mp_limb_t n, ulong num_primes);
 
 mp_limb_t n_factor_partial(n_factor_t * factors, 
                            mp_limb_t n, mp_limb_t limit, int proved);
@@ -284,6 +349,8 @@ mp_limb_t n_factor_lehman(mp_limb_t n);
 mp_limb_t n_factor_SQUFOF(mp_limb_t n, ulong iters);
 
 void n_factor(n_factor_t * factors, mp_limb_t n, int proved);
+
+mp_limb_t n_factor_pp1(mp_limb_t n, ulong B1, ulong c);
 
 int n_is_squarefree(mp_limb_t n);
 
@@ -300,6 +367,12 @@ mp_limb_t n_nextprime(mp_limb_t n, int proved);
 mp_limb_t n_factorial_mod2_preinv(ulong n, mp_limb_t p, mp_limb_t pinv);
 
 mp_limb_t n_factorial_fast_mod2_preinv(ulong n, mp_limb_t p, mp_limb_t pinv);
+
+mp_limb_t n_primitive_root_prime_prefactor(mp_limb_t p, n_factor_t * factors);
+
+mp_limb_t n_primitive_root_prime(mp_limb_t p);
+
+mp_limb_t n_discrete_log_bsgs(mp_limb_t b, mp_limb_t a, mp_limb_t n);
 
 #ifdef __cplusplus
 }

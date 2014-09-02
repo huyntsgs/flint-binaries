@@ -9,7 +9,7 @@ Prebuilt FLINT binaries. Current architectures:
 
 ## FLINT Version (and dependencies)
 
-- `flint-2.3`
+- `flint-2.4.4`
   - `mpfr-3.1.2`
   - `mpir-2.3.1`
 

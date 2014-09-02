@@ -22,8 +22,13 @@
     Copyright 2007 William Hart and David Harvey
 
 ******************************************************************************/
+#ifndef FLINT_PROFILER_H
+#define FLINT_PROFILER_H
 
-#undef ulong /* interferes with system includes, redefined by flint.h below */
+#include "flint.h"
+
+#undef ulong
+#define ulong ulongxx /* interferes with system includes */
 #include <time.h>
 #include <sys/time.h>
 #if defined (__WIN32) && !defined(__CYGWIN__)
@@ -33,13 +38,13 @@ void  GetSystemTimeAsFileTime(FILETIME*);
 static __inline__ int gettimeofday(struct timeval * p, void * tz)
 {
    union {
-      long long ns100; 
+      slong slong ns100; 
       FILETIME ft;
    } now;
 
     GetSystemTimeAsFileTime(&(now.ft));
-    p->tv_usec=(long)((now.ns100 / 10LL) % 1000000LL );
-    p->tv_sec= (long)((now.ns100-(116444736000000000LL))/10000000LL);
+    p->tv_usec=(slong)((now.ns100 / WORD(10)L) % WORD(1000000)L );
+    p->tv_sec= (slong)((now.ns100-(WORD(116444736000000000)L))/WORD(10000000)L);
 	
     return 0;
 }
@@ -49,19 +54,27 @@ int gettimeofday(struct timeval * p, void * tz);
 #else
 #include <sys/resource.h>
 #endif
-#define ulong unsigned long
-
-#ifndef FLINT_PROFILER_H
-#define FLINT_PROFILER_H
+#undef ulong
+#define ulong mp_limb_t
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 
+typedef struct  
+{
+    ulong size;
+    ulong peak;
+    ulong hwm;
+    ulong rss;
+} meminfo_t[1];
+
+void get_memory_usage(meminfo_t meminfo);
+
 typedef struct
 {
-    long cpu;
-    long wall;
+    slong cpu;
+    slong wall;
 } timeit_t[1];
 
 static __inline__
@@ -162,13 +175,75 @@ void prof_stop()
    stop_clock(0);
 }
 
-typedef void (*profile_target_t)(void* arg, unsigned long count);
+typedef void (*profile_target_t)(void* arg, ulong count);
 
 void prof_repeat(double* min, double* max, profile_target_t target, void* arg);
 
 #define DURATION_THRESHOLD 5000.0
 
 #define DURATION_TARGET 10000.0
+
+/******************************************************************************
+
+    Simple timing macros
+
+******************************************************************************/
+
+#define TIMEIT_PRINT(__timer, __reps) \
+    flint_printf("cpu/wall(s): %g %g\n", \
+        __timer->cpu*0.001/__reps, __timer->wall*0.001 / __reps);
+
+#define TIMEIT_REPEAT(__timer, __reps) \
+    do \
+    { \
+        slong __timeit_k; \
+        __reps = 1; \
+        while (1) \
+        { \
+            timeit_start(__timer); \
+            for (__timeit_k = 0; __timeit_k < __reps; __timeit_k++) \
+            {
+
+#define TIMEIT_END_REPEAT(__timer, __reps) \
+            } \
+            timeit_stop(__timer); \
+            if (__timer->cpu >= 100) \
+                break; \
+            __reps *= 10; \
+        } \
+    } while (0);
+
+#define TIMEIT_START \
+    do { \
+        timeit_t __timer; slong __reps; \
+        TIMEIT_REPEAT(__timer, __reps)
+
+#define TIMEIT_STOP \
+        TIMEIT_END_REPEAT(__timer, __reps) \
+        TIMEIT_PRINT(__timer, __reps) \
+    } while (0);
+
+#define TIMEIT_ONCE_START \
+    do \
+    { \
+      timeit_t __timer; \
+      timeit_start(__timer); \
+      do { \
+
+#define TIMEIT_ONCE_STOP \
+      } while (0); \
+      timeit_stop(__timer); \
+      TIMEIT_PRINT(__timer, 1) \
+    } while (0); \
+
+#define SHOW_MEMORY_USAGE \
+    do { \
+        meminfo_t meminfo; \
+        get_memory_usage(meminfo); \
+        flint_printf("virt/peak/res/peak(MB): %.2f %.2f %.2f %.2f\n", \
+            meminfo->size / 1024.0, meminfo->peak / 1024.0, \
+            meminfo->rss / 1024.0, meminfo->hwm / 1024.0); \
+    } while (0);
 
 #ifdef __cplusplus
 }
