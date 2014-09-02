@@ -1,20 +1,108 @@
 
+
+# This is how the git Makefile detects the OS:
+# http://git.kernel.org/cgit/git/git.git/tree/Makefile?id=c965c029330b1f81cc107c5d829e7fd79c61d8ea#n175
+uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
+
+ifeq ($(uname_S),Darwin)
+  LIB_BUILD_FOLDER = flint-build/osx
+endif
+
+ifeq ($(uname_S),Linux)
+  LIB_BUILD_FOLDER = flint-build/ubuntu-x86_64
+endif
+
+
+
 # FLINT
 FLINT_VERSION = flint-2.3
-FLINT_DIR = ./lib/flint/build
-FLINT_LIB = $(FLINT_DIR)/lib/libflint.a
+FLINT_DIR = ./$(LIB_BUILD_FOLDER)/flint/build
+FLINT_LIB = $(FLINT_DIR)/$(LIB_BUILD_FOLDER)/libflint.a
 IDIRS += -I$(FLINT_DIR)/include/flint
 STATIC_LIBS += $(FLINT_LIB)
 
 MPFR_VERSION = mpfr-3.1.2
-MPFR_DIR = ./lib/mpfr/build
-MPFR_LIB = $(MPFR_DIR)/lib/libmpfr.a
+MPFR_DIR = ./$(LIB_BUILD_FOLDER)/mpfr/build
+MPFR_LIB = $(MPFR_DIR)/$(LIB_BUILD_FOLDER)/libmpfr.a
 IDIRS += -I$(MPFR_DIR)/include
 STATIC_LIBS += $(MPFR_LIB)
 
 MPIR_VERSION = mpir-2.3.1
-MPIR_DIR = ./lib/mpir/build
-MPIR_LIB = $(MPIR_DIR)/lib/libmpir.a
+MPIR_DIR = ./$(LIB_BUILD_FOLDER)/mpir/build
+MPIR_LIB = $(MPIR_DIR)/$(LIB_BUILD_FOLDER)/libmpir.a
 IDIRS += -I$(MPIR_DIR)/include
 STATIC_LIBS += $(MPIR_LIB)
 
+
+
+# Build Process
+
+
+
+# FLINT
+
+.PHONY: flint
+flint : mpfr mpir $(FLINT_LIB)
+
+$(FLINT_LIB):
+  cd flint-src/flint ; \
+  tar xf $(FLINT_VERSION).tar.gz ; \
+  mkdir "$(PWD)/$(LIB_BUILD_FOLDER)/flint" ; \
+  cd $(FLINT_VERSION)/ ; \
+  ./configure --with-mpir="$(PWD)/$(LIB_BUILD_FOLDER)/mpir" --with-mpfr="$(PWD)/$(LIB_BUILD_FOLDER)/mpfr" --prefix="$(PWD)/$(LIB_BUILD_FOLDER)/flint" ; \
+  make ; \
+  make install
+
+.PHONY: clean-flint
+clean-flint: clean-mpfr clean-mpir
+  rm -rf $(FLINT_DIR)
+  rm -rf ./flint-src/flint/$(FLINT_VERSION)/
+
+
+# MPFR
+
+.PHONY: mpfr
+mpfr : $(MPFR_LIB)
+
+$(MPFR_LIB):
+  cd flint-src/mpfr ; \
+  tar xf $(MPFR_VERSION).tar.gz ; \
+  mkdir "$(PWD)/$(LIB_BUILD_FOLDER)/mpfr" ; \
+  cd $(MPFR_VERSION)/ ; \
+  ./configure --prefix="$(PWD)/$(LIB_BUILD_FOLDER)/mpfr" CFLAGS="-O2" ; \
+  make ; \
+  make install
+
+.PHONY: clean-mpfr
+clean-mpfr:
+  rm -rf $(MPFR_DIR)
+  rm -rf ./flint-src/mpfr/$(MPFR_VERSION)/
+
+
+# MPIR
+
+.PHONY: mpir
+mpir : $(MPIR_LIB)
+
+$(MPIR_LIB):
+  cd flint-src/mpir ; \
+  tar xf $(MPIR_VERSION).tar.bz2 ; \
+  mkdir "$(PWD)/$(LIB_BUILD_FOLDER)/mpir" ; \
+  cd $(MPIR_VERSION)/ ; \
+  ./configure --prefix="$(PWD)/$(LIB_BUILD_FOLDER)/mpir" ; \
+  make ; \
+  make install
+
+.PHONY: clean-mpir
+clean-mpir:
+  rm -rf $(MPIR_DIR)
+  rm -rf ./flint-src/mpir/$(MPIR_VERSION)/
+
+
+# All libs
+
+.PHONY: libs
+libs : $(FLINT_DEPENDENCY)
+
+.PHONY: clean-libs
+clean-libs : clean-flint
