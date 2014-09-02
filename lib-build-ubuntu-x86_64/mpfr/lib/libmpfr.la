@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/afs/ir/users/l/g/lgarron/mutualfriends/code/lib/mpfr/build/lib'
+libdir='/afs/ir/users/l/g/lgarron/flint-test/flint-binaries/lib-build-ubuntu-x86_64/mpfr/lib'
