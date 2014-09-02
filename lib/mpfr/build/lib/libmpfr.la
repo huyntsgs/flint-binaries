@@ -5,16 +5,16 @@
 # It is necessary for linking the library.
 
 # The name that we can dlopen(3).
-dlname='libmpfr.4.dylib'
+dlname='libmpfr.so.4'
 
 # Names of this library.
-library_names='libmpfr.4.dylib libmpfr.dylib'
+library_names='libmpfr.so.4.1.2 libmpfr.so.4 libmpfr.so'
 
 # The name of the static archive.
 old_library='libmpfr.a'
 
 # Linker flags that can not go in dependency_libs.
-inherited_linker_flags=' '
+inherited_linker_flags=''
 
 # Libraries that this one depends upon.
 dependency_libs=' -lgmp'
@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/Users/lgarron/mutualfriends/code/lib/mpfr/mpfr-3.1.2/../build/lib'
+libdir='/afs/ir/users/l/g/lgarron/mutualfriends/code/lib/mpfr/build/lib'

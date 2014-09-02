@@ -5,16 +5,16 @@
 # It is necessary for linking the library.
 
 # The name that we can dlopen(3).
-dlname='libmpir.7.dylib'
+dlname='libmpir.so.7'
 
 # Names of this library.
-library_names='libmpir.7.dylib libmpir.dylib'
+library_names='libmpir.so.7.3.8 libmpir.so.7 libmpir.so'
 
 # The name of the static archive.
 old_library='libmpir.a'
 
 # Linker flags that can not go in dependency_libs.
-inherited_linker_flags=' '
+inherited_linker_flags=''
 
 # Libraries that this one depends upon.
 dependency_libs=''
@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/Users/lgarron/mutualfriends/code/lib/mpir/mpir-2.3.1/../build/lib'
+libdir='/afs/ir/users/l/g/lgarron/mutualfriends/code/lib/mpir/build/lib'

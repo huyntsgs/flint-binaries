@@ -2378,7 +2378,7 @@ enum
 /* No __GMP_CC here as --enable-gmpcompat option not selected */
 
 #define __MPIR_CC "gcc -std=gnu99"
-#define __MPIR_CFLAGS "-O2 -m64 -march=core2 -mtune=core2"
+#define __MPIR_CFLAGS "-O2 -m64 -march=k8 -mtune=k8"
 #endif
 
 #define __GMP_H__
