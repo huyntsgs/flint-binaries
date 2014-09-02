@@ -1,0 +1,73 @@
+
+
+
+
+
+######## FLINT ########
+
+
+
+.PHONY: flint
+flint : mpfr mpir $(FLINT_LIB)
+
+$(FLINT_LIB):
+	mkdir  $(PWD)/$(FLINT_BUILD) ; \
+	cd     $(LIB_SRC)/flint          ; \
+	tar xf $(FLINT_VERSION).tar.gz   ; \
+	cd     $(FLINT_VERSION)/         ; \
+	./configure --with-mpir="$(PWD)/$(MPIR_BUILD)" --with-mpfr="$(PWD)/$(MPFR_BUILD)" --prefix="$(PWD)/$(FLINT_BUILD)" ; \
+	make ; \
+	make install
+
+.PHONY: clean-flint
+clean-flint: clean-mpfr clean-mpir
+	rm -rf ./$(FLINT_BUILD) ; \
+	rm -rf ./$(FLINT_SRC)/$(FLINT_VERSION)/
+
+
+
+
+######## MPFR ########
+
+
+
+.PHONY: mpfr
+mpfr : $(MPFR_LIB)
+
+$(MPFR_LIB):
+	mkdir  $(PWD)/$(MPFR_BUILD)  ; \
+	cd     $(LIB_SRC)/mpfr ; \
+	tar xf $(MPFR_VERSION).tar.gz ; \
+	cd     $(MPFR_VERSION)/ ; \
+	./configure --prefix="$(PWD)/$(MPFR_BUILD)" CFLAGS="-O2" ; \
+	make ; \
+	make install
+
+.PHONY: clean-mpfr
+clean-mpfr:
+	rm -rf ./$(MPFR_BUILD) ; \
+	rm -rf ./$(MPFR_SRC)/$(MPFR_VERSION)/
+
+
+
+
+######## MPIR ########
+
+
+
+.PHONY: mpir
+mpir : $(MPIR_LIB)
+
+$(MPIR_LIB):
+	mkdir  $(PWD)/$(MPIR_BUILD)  ; \
+	cd     $(LIB_SRC)/mpir ; \
+	tar xf $(MPIR_VERSION).tar.bz2 ; \
+	cd     $(MPIR_VERSION)/ ; \
+	./configure --prefix="$(PWD)/$(MPIR_BUILD)" ; \
+	make ; \
+	make install
+
+.PHONY: clean-mpir
+clean-mpir:
+	rm -rf ./$(MPIR_BUILD) ; \
+	rm -rf ./$(MPIR_SRC)/$(MPIR_VERSION)/
